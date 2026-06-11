@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de Pareja | Intrapsicología PG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Inconsolata:wght@400;600&display=swap');
+
+  :root {
+    --bg: #f9f5ef;
+    --purple: #b094ff;
+    --lime: #cbd800;
+    --orange: #ff8d00;
+    --pink: #ffa9a2;
+    --teal: #00bc9d;
+    --dark: #1a1a2e;
+    --radius: 20px;
+    --basic: #00bc9d;
+    --basic-bg: #e0f8f3;
+    --deseable: #b094ff;
+    --deseable-bg: #f0ecff;
+    --intolerable: #ff4d6d;
+    --intolerable-bg: #ffe0e6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; overflow-x: hidden; }
+
+  .bg-blobs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.18; }
+  .blob-1 { width: 500px; height: 500px; background: var(--purple); top: -150px; right: -150px; }
+  .blob-2 { width: 350px; height: 350px; background: var(--pink); bottom: -100px; left: -100px; }
+  .blob-3 { width: 250px; height: 250px; background: var(--teal); top: 40%; left: 20%; }
+
+  /* ── BIENVENIDA ── */
+  #screen-welcome {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center; position: relative; z-index: 1;
+  }
+  .logo-tag {
+    font-family: 'Inconsolata', monospace; font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--teal); background: rgba(0,188,157,0.12);
+    padding: 6px 14px; border-radius: 100px; margin-bottom: 28px;
+  }
+  .welcome-emoji { font-size: 64px; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  h1.main-title { font-size: clamp(24px,5vw,40px); font-weight: 800; line-height: 1.2; margin-bottom: 14px; }
+  h1.main-title span { color: var(--purple); }
+  .subtitle { font-size: 15px; font-weight: 300; color: #666; max-width: 480px; line-height: 1.75; margin-bottom: 10px; }
+  .subtitle-note { font-size: 13px; color: #aaa; max-width: 420px; line-height: 1.6; margin-bottom: 36px; font-style: italic; }
+
+  .legend-row { display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap; justify-content: center; }
+  .legend-chip {
+    padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .legend-chip.basic    { background: var(--basic-bg); color: var(--basic); }
+  .legend-chip.deseable { background: var(--deseable-bg); color: var(--deseable); }
+  .legend-chip.intolerable { background: var(--intolerable-bg); color: var(--intolerable); }
+
+  .name-block {
+    background: white; border: 2px solid rgba(176,148,255,0.3);
+    border-radius: var(--radius); padding: 24px 28px; width: 100%; max-width: 440px; margin-bottom: 20px;
+  }
+  .name-block label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--purple); margin-bottom: 8px; }
+  .name-block input {
+    width: 100%; border: none; border-bottom: 2px solid #e0d9f7;
+    padding: 8px 0; font-family: 'Sora', sans-serif; font-size: 17px;
+    background: transparent; color: var(--dark); outline: none; transition: border-color 0.2s;
+  }
+  .name-block input:focus { border-color: var(--purple); }
+
+  .btn-start {
+    background: var(--dark); color: white; border: none; padding: 18px 44px;
+    border-radius: 100px; font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 8px 24px rgba(26,26,46,0.25);
+  }
+  .btn-start:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(26,26,46,0.35); }
+  .note-time { font-size: 12px; color: #bbb; margin-top: 14px; }
+
+  /* ── PREGUNTA ── */
+  #screen-question { display: none; min-height: 100vh; flex-direction: column; position: relative; z-index: 1; }
+
+  .progress-bar-wrap { height: 5px; background: rgba(0,0,0,0.06); position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--pink)); transition: width 0.4s ease; border-radius: 0 3px 3px 0; }
+
+  .q-header {
+    padding: 22px 24px 0; display: flex; align-items: center; justify-content: space-between;
+    max-width: 680px; margin: 0 auto; width: 100%;
+  }
+  .q-counter { font-family: 'Inconsolata', monospace; font-size: 13px; color: #999; font-weight: 600; }
+  .q-name-tag { font-size: 12px; font-weight: 700; color: var(--purple); background: var(--deseable-bg); padding: 4px 12px; border-radius: 100px; }
+
+  .q-body {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 24px 140px; max-width: 680px; margin: 0 auto; width: 100%;
+  }
+
+  .q-step-badge {
+    font-family: 'Inconsolata', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px;
+    border-radius: 100px; margin-bottom: 10px; display: inline-block;
+    background: rgba(176,148,255,0.15); color: #7b55e0;
+  }
+
+  /* descripción original */
+  .desc-card {
+    width: 100%; background: white; border-radius: var(--radius);
+    padding: 24px; margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border-left: 4px solid var(--purple);
+    animation: pop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop { from{transform:scale(0.97);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .desc-title {
+    font-size: 18px; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+  }
+  .desc-num { font-family: 'Inconsolata', monospace; font-size: 13px; color: #bbb; font-weight: 600; }
+  .desc-text { font-size: 14px; color: #555; line-height: 1.75; font-weight: 300; }
+
+  /* mi versión */
+  .text-block {
+    width: 100%; background: white; border-radius: var(--radius);
+    padding: 22px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .text-block label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #bbb; display: block; margin-bottom: 10px; }
+  .text-block textarea {
+    width: 100%; min-height: 90px; border: 2px solid #f0ecff; border-radius: 12px;
+    padding: 12px 14px; font-family: 'Sora', sans-serif; font-size: 14px;
+    resize: vertical; outline: none; transition: border-color 0.2s; color: var(--dark); line-height: 1.65;
+  }
+  .text-block textarea:focus { border-color: var(--purple); }
+  .text-block .hint { font-size: 12px; color: #bbb; margin-top: 8px; font-style: italic; }
+
+  /* ¿lo pido y lo doy? */
+  .pido-doy-block {
+    width: 100%; background: white; border-radius: var(--radius);
+    padding: 22px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .pido-doy-block .pd-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #bbb; margin-bottom: 14px; text-align: center; }
+  .pd-options { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .pd-btn {
+    padding: 12px 20px; border-radius: 14px; border: 2px solid #ece9f9;
+    background: white; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; color: #666; text-align: center;
+  }
+  .pd-btn:hover { border-color: var(--purple); color: var(--dark); }
+  .pd-btn.selected { border-color: transparent; color: white; }
+  .pd-btn.sel-siambos { background: #00bc9d; }
+  .pd-btn.sel-lopido  { background: #ff8d00; }
+  .pd-btn.sel-lodoy   { background: #b094ff; }
+  .pd-btn.sel-ninguno { background: #aaa; }
+
+  /* clasificación */
+  .clasif-block {
+    width: 100%; background: white; border-radius: var(--radius);
+    padding: 22px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .clasif-block .cl-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #bbb; margin-bottom: 14px; text-align: center; }
+  .cl-options { display: flex; gap: 10px; justify-content: center; }
+  .cl-btn {
+    flex: 1; padding: 16px 10px; border-radius: 16px; border: 2.5px solid #ece9f9;
+    background: white; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; color: #888; text-align: center; line-height: 1.4;
+  }
+  .cl-btn:hover { transform: scale(1.03); }
+  .cl-btn.sel-basico      { background: var(--basic-bg); border-color: var(--basic); color: var(--basic); }
+  .cl-btn.sel-deseable    { background: var(--deseable-bg); border-color: var(--deseable); color: var(--deseable); }
+  .cl-btn.sel-intolerable { background: var(--intolerable-bg); border-color: var(--intolerable); color: var(--intolerable); }
+
+  /* nav */
+  .nav-fixed {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    background: rgba(249,245,239,0.96); backdrop-filter: blur(12px);
+    padding: 14px 24px 24px; display: flex; gap: 12px; max-width: 680px; width: 100%;
+  }
+  .btn-back {
+    flex: 1; padding: 15px; border-radius: 100px; border: 2px solid #ddd;
+    background: transparent; font-family: 'Sora', sans-serif; font-size: 14px;
+    font-weight: 600; cursor: pointer; color: #888; transition: all 0.15s;
+  }
+  .btn-back:hover { border-color: #aaa; color: #555; }
+  .btn-next {
+    flex: 3; padding: 15px; border-radius: 100px; border: none;
+    background: var(--dark); color: white; font-family: 'Sora', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 6px 20px rgba(26,26,46,0.2);
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(26,26,46,0.3); }
+  .btn-next:disabled { background: #ccc; box-shadow: none; transform: none; cursor: not-allowed; }
+
+  /* ── LISTO ── */
+  #screen-done {
+    display: none; min-height: 100vh; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center; position: relative; z-index: 1;
+  }
+  .done-emoji { font-size: 72px; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+  .done-title { font-size: clamp(22px,5vw,34px); font-weight: 800; margin-bottom: 10px; }
+  .done-sub { font-size: 15px; color: #666; max-width: 400px; line-height: 1.7; margin-bottom: 36px; font-weight: 300; }
+  .btn-pdf {
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    color: white; border: none; padding: 20px 48px; border-radius: 100px;
+    font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 10px 32px rgba(176,148,255,0.4); transition: all 0.15s; margin-bottom: 16px;
+  }
+  .btn-pdf:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(176,148,255,0.5); }
+  .instructions-card {
+    background: white; border-radius: var(--radius); padding: 22px;
+    max-width: 400px; width: 100%; margin-top: 20px; text-align: left;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .instructions-card h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin-bottom: 10px; }
+  .instructions-card ol { padding-left: 18px; }
+  .instructions-card li { font-size: 13px; color: #555; margin-bottom: 7px; line-height: 1.6; }
+
+  .screen-enter { animation: fadeSlide 0.3s ease; }
+  @keyframes fadeSlide { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- ══ BIENVENIDA ══ -->
+<div id="screen-welcome">
+  <div class="logo-tag">Intrapsicología PG</div>
+  <div class="welcome-emoji">💜</div>
+  <h1 class="main-title">Guía de <span>autoconocimiento</span><br>para pareja</h1>
+  <p class="subtitle">74 temas para conocerte mejor antes de elegir — o para profundizar en la relación que ya tienes.</p>
+  <p class="subtitle-note">Cada persona contesta por su cuenta. Al final descargas tu PDF para compartir con tu psicóloga.</p>
+
+  <div class="legend-row">
+    <div class="legend-chip basic">🟢 Básico</div>
+    <div class="legend-chip deseable">🟣 Deseable</div>
+    <div class="legend-chip intolerable">🔴 Intolerable</div>
+  </div>
+
+  <div class="name-block">
+    <label>¿Cómo te llamas?</label>
+    <input type="text" id="input-name" placeholder="Tu nombre" autocomplete="off" />
+  </div>
+  <button class="btn-start" onclick="startQuiz()">Comenzar →</button>
+  <p class="note-time">⏱ 74 temas — tómate tu tiempo, no hay prisa</p>
+</div>
+
+<!-- ══ PREGUNTA ══ -->
+<div id="screen-question">
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-bar"></div></div>
+  <div class="q-header" style="margin-top:18px;">
+    <span class="q-counter" id="q-counter"></span>
+    <span class="q-name-tag" id="q-name-tag"></span>
+  </div>
+  <div class="q-body screen-enter" id="q-body"></div>
+  <div class="nav-fixed">
+    <button class="btn-back" id="btn-back" onclick="prevQ()">← Atrás</button>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ══ LISTO ══ -->
+<div id="screen-done">
+  <div class="done-emoji">🎉</div>
+  <h2 class="done-title">¡Lista tu guía!</h2>
+  <p class="done-sub">Descarga tu PDF y compártelo con tu psicóloga para trabajarlo en sesión.</p>
+  <button class="btn-pdf" onclick="generatePDF()">⬇️ Descargar mi PDF</button>
+  <div class="instructions-card">
+    <h3>¿Qué sigue?</h3>
+    <ol>
+      <li>Descarga el PDF generado.</li>
+      <li>Mándalo por WhatsApp a tu psicóloga.</li>
+      <li>Si tu pareja también lo hace, comparen sus PDFs en sesión.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// TEMAS
+// ══════════════════════════════════════
+const TEMAS = [
+  { id: 'aceptacion', titulo: 'Aceptación', desc: 'Tengo conocimiento de los aspectos que no me gustan de esa persona, los acepto, los respeto, los tolero — y la persona acepta, respeta y/o tolera los míos. ¿O estoy esperando que en el futuro cambie?' },
+  { id: 'alimentacion', titulo: 'Alimentación', desc: '¿Es muy especial para comer? ¿Come de forma nutritiva en general? ¿Quién va a cocinar? ¿Hay muchos alimentos que no come y podemos adaptarnos? ¿Nuestras formas de comer son muy distintas o similares? ¿Eso puede afectarnos?' },
+  { id: 'amar', titulo: 'Amar', desc: '¿Se casa para amarme o solo para que lo/la hagan feliz? ¿Entiendo que el amor es poder poner primero al otro antes que a mí? ¿Me caso para amar o solo para que me amen? ¿Soy capaz en actos concretos de ponerme en segundo lugar — desde qué vamos a comer hasta desvelarme por cuidar a mi esposo/a enfermo/a, no solo un día sino muchos?' },
+  { id: 'amistades', titulo: 'Amistades', desc: '¿A qué le da prioridad: a la relación o a los amigos? ¿Podemos tener nuestros tiempos con amigos? ¿Qué tipo de amigos tenemos — con mentalidad a favor de la familia y el matrimonio o en favor de una vida sin responsabilidades?' },
+  { id: 'imagen', titulo: 'Imagen', desc: '¿Le gusta arreglarse, sacarse partido físicamente? ¿Cómo es su imagen? ¿La cuida? ¿Tiene hábitos de arreglo? ¿Le importa cómo se ve? ¿Cuida el estado de su ropa en general?' },
+  { id: 'caballerosidad', titulo: 'Caballerosidad', desc: 'Si soy mujer: ¿espero que el hombre sea muy caballeroso? ¿Mi pareja lo es? ¿Sé esperar a que me abran la puerta o pido que sean caballerosos pero no me dejo cuidar? Si soy hombre: ¿tengo la costumbre de ser caballeroso? ¿Mi pareja lo espera de mí? ¿Qué tan importante es esto para mí?' },
+  { id: 'persistir', titulo: 'Capacidad de persistir', desc: '¿Tiene una mentalidad a largo plazo del matrimonio, de resolución más que de ruptura? En caso de crisis, ¿tiene contemplado pedir ayuda? ¿A quién? ¿Con qué frecuencia?' },
+  { id: 'capacidad_economica', titulo: 'Capacidad económica', desc: '¿Tiene la capacidad para mantener una familia al menos para empezar? Si soy mujer, ¿estoy dispuesta a hacer equipo y ayudar en caso de ser necesario? Tomen en cuenta que presupuesto necesitan para empezar, y con la llegada de un hijo, dos, etc. (No siempre los hijos llegan años después — a veces llegan a los meses de casados y deben estar listos para asumir responsabilidades económicas.)' },
+  { id: 'caricias', titulo: 'Caricias', desc: '¿Es una persona cariñosa? ¿Cómo demuestra su amor? ¿Cuál es su lenguaje del amor? ¿Cuál es el mío? ¿Puedo recibir su forma de amar aunque no sea mi preferida y ser agradecido/a?' },
+  { id: 'castidad', titulo: 'Castidad', desc: '¿Cree en la castidad del noviazgo y del matrimonio? ¿Sabe lo que es la castidad? ¿Está dispuesto/a a poner los medios para vivirla? ¿Entiende que la castidad se vive diferente en el noviazgo que en el matrimonio y por qué?' },
+  { id: 'caracter', titulo: 'Compatibilidad de carácter', desc: '¿Siento y veo claramente que somos compatibles? ¿Nos llevamos bien, o peleamos todo el tiempo de cosas simples o de cosas graves? ¿Cómo son nuestros temperamentos?' },
+  { id: 'comprension', titulo: 'Comprensión', desc: '¿Es una persona comprensiva cuando cometo errores? ¿Cómo se trata cuando él/ella comete errores? ¿Lo reconoce y hace algo por cambiar? ¿Qué función cumple la comprensión en su vida?' },
+  { id: 'comunicacion', titulo: 'Comunicación', desc: '¿Sabe comunicar lo que siente? ¿Sabe lo que siente? ¿Logra transmitir sus sentimientos y necesidades lo mínimo necesario? ¿Sabe recibir mis sentimientos y necesidades?' },
+  { id: 'confianza', titulo: 'Confianza', desc: '¿Tengo confianza de hablar con mi pareja, o siento que se puede enojar de cualquier cosa? ¿Qué está detrás de eso? ¿Me siento libre de ser yo mismo/a con él/ella? ¿Él/ella se siente libre conmigo?' },
+  { id: 'criterio', titulo: 'Criterio', desc: '¿Tiene un criterio propio? ¿Sabe por qué piensa lo que piensa en aspectos en general? ¿Es fácilmente influenciable por los medios de comunicación y/o amigos? ¿Es curioso/a? ¿Le gusta formarse en temas de religión o política?' },
+  { id: 'cultura', titulo: 'Cultura / Lectura', desc: '¿Es alguien culto/a? ¿Le interesa leer, estudiar, formarse?' },
+  { id: 'decisiones', titulo: 'Decisiones', desc: '¿Es una persona que le gusta incluir a su pareja en decisiones importantes, o normalmente no me toma en cuenta? ¿Sí, no y por qué?' },
+  { id: 'dinero', titulo: 'Dinero', desc: '¿En qué conceptos considera que no es justificable gastar y en cuáles sí? ¿Entiende que el dinero es un medio o definitivamente lo ve como un fin? ¿El dinero será de ambos, o será "tu dinero y mi dinero"? ¿Alguien más será dueño de su dinero como su familia? ¿Quién administre el dinero tomará en cuenta al otro?' },
+  { id: 'detalles', titulo: 'Detalles', desc: '¿Es una persona detallista? ¿Le gusta hacer sorpresas? ¿Piensa en las fechas especiales? ¿Le da importancia a los gustos que yo tengo? ¿Piensa que solo es necesario ser detallista en el noviazgo o también en el matrimonio?' },
+  { id: 'discriminacion', titulo: 'Discriminación', desc: '¿Discrimina a otros? ¿Es despectivo/a con personas con discapacidad, obesidad, personas en algún estado vulnerable? ¿Trata mal a personas que le prestan un servicio? ¿Siente que es superior a otros?' },
+  { id: 'pornografia', titulo: 'Pornografía', desc: '¿Qué piensa sobre la pornografía? ¿Hace uso de ella? ¿Tiene un vicio? ¿Está haciendo algo para dejar de consumirla? ¿Considera que la pornografía es algo que necesita o que es normal?' },
+  { id: 'economia', titulo: 'Economía', desc: 'Si soy mujer: ¿conozco si aspira a ganar el dinero suficiente para vivir con lo necesario, o yo también aportaré? Si soy hombre: ¿estoy consciente de mi responsabilidad económica? ¿Aspiramos a un nivel de vida parecido? ¿Venimos de familias con un nivel de vida similar?' },
+  { id: 'ejercicio', titulo: 'Ejercicio', desc: '¿Hace ejercicio o no? ¿Con qué frecuencia? ¿Se ha obsesionado con el ejercicio? ¿Qué tan importante es eso para mí?' },
+  { id: 'empatia', titulo: 'Empatía', desc: '¿Tiene la capacidad de ser empático/a? ¿Siento que me entiende cuando hablo con él/ella? ¿Le interesa o logra ponerse en mi lugar? ¿Le importa o intenta entenderme aunque no lo logre, pero lo intenta?' },
+  { id: 'equilibrio', titulo: 'Equilibrio', desc: '¿Se puede observar un equilibrio en su vida en general? ¿Busca ser alguien equilibrado y estable en las áreas de su vida? ¿En qué áreas hay desequilibrio y qué tanto? Nadie tiene una vida equilibrada perfecta en todo, pero la idea es estar en el camino.' },
+  { id: 'escucha', titulo: 'Escucha', desc: '¿Tiene la capacidad de escucharme o interrumpe? ¿Piensa que solo lo que él/ella dice es importante? ¿Es capaz de aceptar ideas nuevas, incluso si eran distintas a cómo solía pensar?' },
+  { id: 'apego', titulo: 'Estilos de apego', desc: '¿Qué estilo de apego tiene? ¿Cuál tengo yo? ¿Qué resulta de esos estilos? ¿Tenemos paz? ¿Conectamos? ¿Estar con él/ella me regula emocionalmente, o una vez que nos desconectamos peleamos de formas muy feas? ¿Hay algo de apego seguro en el otro o en mí?' },
+  { id: 'estudios', titulo: 'Estudios', desc: '¿Tiene licenciatura, maestría, doctorado? ¿Qué tan importante es eso para mí y por qué?' },
+  { id: 'exito', titulo: 'Éxito', desc: '¿Se aferra a su éxito profesional o trata de buscar el equilibrio? ¿Es astuto/a para los negocios? ¿Tiene visión? ¿Su vida profesional es compatible con la formación de un matrimonio y una familia?' },
+  { id: 'expresiones', titulo: 'Expresiones', desc: '¿La manera de expresarse frente a mí es decente o dice groserías todo el tiempo? ¿Sus amigos se expresan igual? ¿Cómo me hace sentir? ¿Qué está detrás de esa forma de expresarse?' },
+  { id: 'familia_politica', titulo: 'Familia política', desc: '¿Busca ser atento/a con mi familia? ¿La familia de él/ella se mete en su vida y en nuestra relación? ¿Es una familia que sabe respetar límites o se meten en absolutamente todo? ¿La familia lo/la manipula con culpa? ¿Parece el esposo emocionalmente hablando de su mamá, o la esposa de su papá?' },
+  { id: 'fidelidad', titulo: 'Fidelidad', desc: '¿Qué piensa sobre la infidelidad? ¿Ha sido infiel? ¿Qué es infidelidad para él/ella? ¿Considera que la infidelidad es en el pensamiento, en un beso o en tener sexo? ¿Ver pornografía es infidelidad? ¿Qué medidas tomaremos para no llegar a la infidelidad?' },
+  { id: 'fiestas', titulo: 'Fiestas', desc: '¿Es alguien que puede estar de fiesta toda la semana o tiene equilibrio entre la diversión y las responsabilidades? ¿Qué tan sociable soy? ¿Qué tan sociable es el otro? ¿Eso será o no un problema?' },
+  { id: 'fisico', titulo: 'Físico', desc: '¿Me gusta físicamente? ¿Cómo se mantiene sano/a o presentable? ¿Es limpio/a? ¿Su aspecto es pulcro? ¿Qué tanto esto es importante o no para mí? ¿Entiendo que el cuerpo de mi esposo/a cambiará con el tiempo?' },
+  { id: 'gastos', titulo: 'Gastos', desc: 'Si soy mujer: ¿espero que el hombre mantenga toda la casa? Si soy hombre: ¿creo que es mi responsabilidad mantener la casa? ¿En qué cosas no vamos a gastar y en cuáles sí? ¿Cómo se gastaba en tu casa? ¿Hay peleas por eso todo el tiempo?' },
+  { id: 'generosidad', titulo: 'Generosidad', desc: '¿Es una persona generosa con su tiempo, con sus bienes materiales, con su espacio? ¿Es servicial? ¿Los que lo/la conocen piensan que es egoísta? ¿Tiene actitudes egoístas con sus cercanos aunque conmigo no las tenga?' },
+  { id: 'hobbies', titulo: 'Gustos / Hobbies', desc: '¿Coincidimos en gustos como ver películas, ir al cine, bailar, el arte, la cocina, escalar, los deportes? ¿O somos muy diferentes? ¿Puede causar problemas en el matrimonio? ¿Alguno es una obsesión que parece más importante que la familia o el noviazgo?' },
+  { id: 'hijos', titulo: 'Hijos', desc: '¿Sí o no? ¿Cuántos? Expectativas, miedos, dudas. ¿Está abierto/a a la vida?' },
+  { id: 'humildad', titulo: 'Humildad', desc: '¿Tiene capacidad de hacer introspección, de analizarse a sí mismo/a, de aceptar sus errores? ¿Hace algo realmente para mejorar sus errores? ¿Tiene al menos una pizca de humildad? Esta es la más importante.' },
+  { id: 'ingresos', titulo: 'Ingresos', desc: '¿Es capaz de mantenerse y mantener un hogar al menos para empezar? ¿Tiene posibilidades de crecimiento conforme los gastos aumenten?' },
+  { id: 'integridad', titulo: 'Integridad', desc: '¿Busca ser congruente entre lo que piensa, dice y hace? ¿Busca hacer lo correcto lo estén viendo o no otras personas? ¿Es alguien en quien se puede confiar porque dice la verdad? ¿Está acostumbrado/a a mentir? ¿En qué temas y por qué?' },
+  { id: 'limites', titulo: 'Límites', desc: '¿Sabe poner límites a su familia y/o amigos cuando algo no le gusta o se meten en nuestra relación? ¿Nos ponemos límites entre nosotros y los sabemos recibir? ¿Cómo reacciona cuando le ponen un límite?' },
+  { id: 'conflicto', titulo: 'Manejo de conflicto', desc: '¿Competencia, evasión o cooperación? ¿Cómo reacciona ante los problemas? ¿Cómo resolvemos los conflictos que tenemos? ¿Normalmente competimos por tener la razón? ¿Evadimos hasta que las cosas explotan? ¿O ambos cooperamos buscando que gane el bien mayor? ¿Hemos pedido ayuda? ¿Estamos dispuestos a pedirla?' },
+  { id: 'madurez', titulo: 'Madurez emocional', desc: '¿Qué significa ser maduros afectivamente? La madurez afectiva implica que la persona despliegue sus dones y capacidades amando a Dios, a sí mismo y a los demás. ¿Entiendo qué es la inmadurez emocional y cómo puede ser causal de nulidad?' },
+  { id: 'matrimonio', titulo: 'Matrimonio', desc: '¿Cree en el matrimonio? ¿Qué piensa del matrimonio? ¿Qué piensa sobre el divorcio? ¿Se quiere casar? ¿Cuándo? ¿Cuál es su visión del matrimonio? ¿Sabe que es un sacramento? ¿Considera el divorcio como una opción?' },
+  { id: 'mejora', titulo: 'Mejora continua', desc: '¿Es una persona que está en la búsqueda de ser mejor constantemente en general? ¿Es capaz de ver sus errores y trazar un plan de acción para hacerse cargo de ellos?' },
+  { id: 'orden', titulo: 'Orden', desc: '¿Es ordenado/a en su vida en general? ¿Tiene buenos hábitos y rutinas? ¿Cuáles son las consecuencias de la falta de orden en su vida y eventualmente en el matrimonio? ¿Hay disposición para mejorar?' },
+  { id: 'perdon', titulo: 'Perdón', desc: '¿Sabe perdonar? ¿Guarda rencor por mucho tiempo? ¿Es compasivo/a? ¿Se perdonaban en su casa? ¿Ha experimentado la misericordia en su vida?' },
+  { id: 'prioridades', titulo: 'Prioridades', desc: '¿Es alguien que me defiende en caso de algún malentendido con la familia o se queda callado/a? ¿Siento que soy lo más importante para él/ella? El orden de las prioridades: Dios, mi esposo/a, mis hijos, mi familia de origen y política, amigos.' },
+  { id: 'proyecto', titulo: 'Proyecto en común', desc: '¿Tiene una mentalidad de proyectos en común o casi todo por separado? ¿Tenemos proyectos? ¿Son capaces de alinearse o van por rumbos muy distintos? ¿Su vida profesional es compatible con la formación de un matrimonio y una familia?' },
+  { id: 'puntualidad', titulo: 'Puntualidad', desc: '¿Es una persona puntual en su vida laboral/académica y en su vida personal? ¿Qué tanto eso es importante o no para mí? ¿Afecta su vida? ¿Solo es impuntual en eventos sociales pero no en los laborales?' },
+  { id: 'quimica', titulo: 'Química sexual', desc: '¿Hay atracción? ¿Siento que le gusto lo suficiente? ¿Me gusta lo suficiente? ¿Hay química? La atracción se da o no se da, pero si se da puede crecer mucho una vez que nos demos cuenta que compartimos valores. Debe haber atracción porque tendrás sexo con esa persona.' },
+  { id: 'reconocimiento', titulo: 'Reconocimiento', desc: '¿Reconoce mis logros, mis esfuerzos? ¿Me admira? ¿Lo/la admiro a él/ella?' },
+  { id: 'referencias', titulo: 'Referencias', desc: '¿Cómo se expresan sus más cercanos de él/ella? Pon atención cuando recién conozcas a su familia y amigos — puedes encontrar información importante si pones atención.' },
+  { id: 'religion', titulo: 'Religión', desc: '¿Es católico/a "light" o por convicción? ¿Busca vivir plenamente en base a la doctrina? ¿Va a misa? ¿Qué tan importante es eso para mí? ¿Expectativas de cómo viviremos nuestra religión en el matrimonio? ¿Qué pasa si alguno se aleja por completo de Dios?' },
+  { id: 'respeto', titulo: 'Respeto', desc: '¿Qué considera que es una falta de respeto? ¿Las ha habido? ¿Qué está detrás de lo que ha sucedido? ¿Cómo se vivía el respeto en su casa? ¿Qué consecuencias tuvo vivir así?' },
+  { id: 'responsabilidad', titulo: 'Responsabilidad', desc: 'Si no es responsable, no está listo/a para casarse. ¿Es responsable en su trabajo/escuela? ¿Se responsabiliza de las consecuencias de sus actos? ¿Cómo está su cuarto? ¿Permanece en los trabajos? ¿Paga sus deudas? ¿Cumple lo que promete?' },
+  { id: 'tareas', titulo: 'Tareas del hogar', desc: '¿Quién limpiará la casa? ¿Conozco lo básico de la limpieza, de cocinar, de lavar ropa? ¿Estoy dispuesto/a a aprender? ¿Entiendo que la casa es de los que viven en ella, o solo es del hombre o de la mujer?' },
+  { id: 'salud', titulo: 'Salud', desc: '¿Cuenta con salud física y mental? ¿Cuida su salud? ¿Cómo es su salud mental? ¿Hay problemas de salud que impidan la formación de una familia? ¿Hay alguna causal de nulidad asociada a temas de salud? ¿Qué cosas tengo que decir aunque me dé pena?' },
+  { id: 'seguridad', titulo: 'Seguridad', desc: 'Si soy mujer: ¿me siento segura a su lado, cuidada? ¿Me dejo cuidar? Si soy hombre: ¿me siento capaz de brindar seguridad y cuidado? Si como mujer no me siento segura, ¿en qué cosas no me siento segura y por qué? ¿Cómo puede afectar eso nuestra relación?' },
+  { id: 'sexualidad', titulo: 'Sexualidad', desc: '¿Tiene el conocimiento adecuado sobre sexualidad? ¿Tiene algún problema en ese ámbito, algún vicio, dudas? ¿Hay algún impedimento físico o psicológico conocido que pueda afectar el desarrollo de una vida sexual normal para la unión y procreación de la familia?' },
+  { id: 'soledad', titulo: 'Soledad', desc: '¿Sabe estar solo/a o depende siempre de mí o de alguien más para estar tranquilo/a? Somos seres sociales, hechos para vivir en comunidad. ¿Entendemos que el primer esposo es Cristo y luego mi esposo/a de carne y hueso? ¿Hay apertura para recibir formación y tener un punto de vista equilibrado?' },
+  { id: 'frustracion', titulo: 'Tolerancia a la frustración', desc: '¿Qué hace cuando las cosas no salen como esperaba? ¿Cómo reacciona? ¿Se deprime, renuncia o busca resolver? ¿Qué tanto persevera en las decisiones y metas que se propone?' },
+  { id: 'trabajo', titulo: 'Trabajo', desc: 'Si soy mujer: ¿trabajaré fuera de casa? Si soy hombre: ¿qué pienso de que mi esposa trabaje fuera de casa? ¿Qué expectativas y deseos hay sobre este tema?' },
+  { id: 'equipo', titulo: 'Trabajo en equipo', desc: '¿Es capaz de compartir un objetivo y poner de su parte para lograrlo? ¿Confía en los demás? ¿Sabe delegar?' },
+  { id: 'traumas', titulo: 'Traumas', desc: '¿Alcanzo a percibir que tiene muchos traumas a superar que le imposibilitan tener una relación estable? Todos tenemos traumas y heridas — me refiero a si la persona se hace cargo de ellos o no. ¿Su salud mental es apta para el matrimonio y la crianza de los hijos?' },
+  { id: 'viajes', titulo: 'Viajes', desc: '¿Le gusta viajar? ¿Lo hace con cierta frecuencia? ¿Qué tan vital es eso para mí, para el otro? ¿Qué expectativas tengo de los viajes y vacaciones? ¿Qué presupuesto se va a destinar?' },
+  { id: 'vicios', titulo: 'Vicios', desc: '¿Tiene algún vicio a cualquier sustancia o actividad que se pueda convertir en algo grave o ya sea grave desde el día de hoy? ¿Viene de una familia con problemas serios de adicción? ¿Cómo resuelve sus problemas?' },
+  { id: 'vida', titulo: 'Vida', desc: '¿Quiere tener hijos? ¿Cuántos? ¿Tiene apertura a la vida? ¿Sabe que es estar abierto a la vida? ¿Entiende qué es la paternidad responsable? ¿Qué piensa sobre los anticonceptivos? ¿Qué piensa sobre el método natural que la Iglesia sugiere?' },
+  { id: 'vida_social', titulo: 'Vida social', desc: '¿Es alguien que necesita tener mucha convivencia en eventos sociales a causa de su trabajo? ¿Estoy dispuesto/a a apoyarlo/la?' },
+  { id: 'violencia', titulo: 'Violencia', desc: '¿Es violento/a psicológicamente, físicamente, económicamente? ¿Me preocupan sus reacciones? ¿Le tengo miedo? ¿Qué ha hecho en caso de tener reacciones inapropiadas? ¿Hay mejoras medibles en este tema? ¡Ojo!' },
+];
+
+const PD_OPTIONS = [
+  { id: 'siambos', label: '✅ Lo pido y lo doy', cls: 'sel-siambos' },
+  { id: 'lopido',  label: '📥 Solo lo pido',    cls: 'sel-lopido'  },
+  { id: 'lodoy',   label: '📤 Solo lo doy',     cls: 'sel-lodoy'   },
+  { id: 'ninguno', label: '➖ Ninguno',          cls: 'sel-ninguno' },
+];
+
+const CL_OPTIONS = [
+  { id: 'basico',      label: '🟢 Básico',      cls: 'sel-basico',      desc: 'Sin esto no hay relación posible' },
+  { id: 'deseable',    label: '🟣 Deseable',    cls: 'sel-deseable',    desc: 'Lo quiero pero puedo negociarlo' },
+  { id: 'intolerable', label: '🔴 Intolerable', cls: 'sel-intolerable', desc: 'Si está presente, no puedo continuar' },
+];
+
+// ══════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════
+let currentQ = 0;
+let userName = '';
+let answers = {}; // { temaId: { miVersion, pidoDoy, clasificacion } }
+
+function getA(id) { return answers[id] || { miVersion: '', pidoDoy: '', clasificacion: '' }; }
+function setA(id, field, val) {
+  if (!answers[id]) answers[id] = { miVersion: '', pidoDoy: '', clasificacion: '' };
+  answers[id][field] = val;
+}
+
+// ══════════════════════════════════════
+// BIENVENIDA
+// ══════════════════════════════════════
+function startQuiz() {
+  const n = document.getElementById('input-name').value.trim();
+  if (!n) { document.getElementById('input-name').focus(); return; }
+  userName = n;
+  document.getElementById('screen-welcome').style.display = 'none';
+  document.getElementById('screen-question').style.display = 'flex';
+  renderQ();
+}
+document.getElementById('input-name').addEventListener('keydown', e => { if (e.key === 'Enter') startQuiz(); });
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function renderQ() {
+  const tema = TEMAS[currentQ];
+  const total = TEMAS.length;
+  const a = getA(tema.id);
+
+  document.getElementById('prog-bar').style.width = `${(currentQ / total) * 100}%`;
+  document.getElementById('q-counter').textContent = `${currentQ + 1} / ${total}`;
+  document.getElementById('q-name-tag').textContent = userName;
+  document.getElementById('btn-back').style.display = currentQ === 0 ? 'none' : '';
+
+  const body = document.getElementById('q-body');
+  body.innerHTML = '';
+  body.classList.remove('screen-enter');
+  void body.offsetWidth;
+  body.classList.add('screen-enter');
+
+  const clasifColor = a.clasificacion === 'basico' ? 'var(--basic)' : a.clasificacion === 'deseable' ? 'var(--deseable)' : a.clasificacion === 'intolerable' ? 'var(--intolerable)' : 'var(--purple)';
+
+  body.innerHTML = `
+    <!-- descripción -->
+    <div class="desc-card" style="border-left-color:${clasifColor}">
+      <div class="desc-title">
+        <span class="desc-num">${String(currentQ + 1).padStart(2,'0')}</span>
+        ${tema.titulo}
+      </div>
+      <div class="desc-text">${tema.desc}</div>
+    </div>
+
+    <!-- mi versión -->
+    <div class="text-block">
+      <label>¿Qué significa esto para ti?</label>
+      <textarea id="mi-version" placeholder="Escribe con tus propias palabras qué tan importante es esto, cómo lo vives, qué expectativas tienes, qué dudas o miedos..."
+        oninput="setA('${tema.id}','miVersion',this.value)">${a.miVersion}</textarea>
+      <div class="hint">No tienes que responder todo — escribe lo que sea relevante para ti.</div>
+    </div>
+
+    <!-- ¿lo pido y lo doy? -->
+    <div class="pido-doy-block">
+      <div class="pd-label">¿Lo pido y lo doy?</div>
+      <div class="pd-options">
+        ${PD_OPTIONS.map(o => `
+          <button class="pd-btn ${a.pidoDoy === o.id ? 'selected ' + o.cls : ''}"
+            onclick="selectPD('${tema.id}', '${o.id}', '${o.cls}', this)">
+            ${o.label}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- clasificación -->
+    <div class="clasif-block">
+      <div class="cl-label">Para mí, esto es...</div>
+      <div class="cl-options">
+        ${CL_OPTIONS.map(o => `
+          <button class="cl-btn ${a.clasificacion === o.id ? 'sel-'+o.id : ''}"
+            onclick="selectCL('${tema.id}', '${o.id}', this)" title="${o.desc}">
+            ${o.label}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  updateNextBtn();
+  window.scrollTo(0, 0);
+}
+
+function selectPD(temaId, val, cls, el) {
+  setA(temaId, 'pidoDoy', val);
+  document.querySelectorAll('.pd-btn').forEach(b => { b.className = 'pd-btn'; });
+  el.className = `pd-btn selected ${cls}`;
+  updateNextBtn();
+}
+
+function selectCL(temaId, val, el) {
+  setA(temaId, 'clasificacion', val);
+  document.querySelectorAll('.cl-btn').forEach(b => { b.className = 'cl-btn'; });
+  el.className = `cl-btn sel-${val}`;
+  // actualizar color borde tarjeta
+  const colors = { basico: 'var(--basic)', deseable: 'var(--deseable)', intolerable: 'var(--intolerable)' };
+  const card = document.querySelector('.desc-card');
+  if (card) card.style.borderLeftColor = colors[val] || 'var(--purple)';
+  updateNextBtn();
+}
+
+function updateNextBtn() {
+  const tema = TEMAS[currentQ];
+  const a = getA(tema.id);
+  const btn = document.getElementById('btn-next');
+  const isLast = currentQ === TEMAS.length - 1;
+  btn.textContent = isLast ? 'Terminar ✓' : 'Siguiente →';
+  btn.disabled = !a.pidoDoy || !a.clasificacion;
+}
+
+function nextQ() {
+  if (currentQ < TEMAS.length - 1) { currentQ++; renderQ(); }
+  else showDone();
+}
+function prevQ() { if (currentQ > 0) { currentQ--; renderQ(); } }
+function showDone() {
+  document.getElementById('screen-question').style.display = 'none';
+  document.getElementById('screen-done').style.display = 'flex';
+}
+
+// ══════════════════════════════════════
+// PDF
+// ══════════════════════════════════════
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, ML = 16, MR = 16, CW = W - ML - MR;
+  let y = 0;
+
+  const C = {
+    dark: [26,26,46], white: [255,255,255], bg: [249,245,239],
+    purple: [176,148,255], pink: [255,169,162], teal: [0,188,157],
+    muted: [150,150,165],
+    basic: [0,188,157],      basicBg: [224,248,243],
+    deseable: [176,148,255], deseBg: [240,236,255],
+    intolerable: [255,77,109], intBg: [255,224,230],
+    siambos: [0,188,157], lopido: [255,141,0], lodoy: [176,148,255], ninguno: [180,180,180],
+  };
+
+  function checkPage(need=20) {
+    if (y + need > 275) { doc.addPage(); y = 16; footer(); }
+  }
+
+  function footer() {
+    const pg = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...C.muted);
+    doc.text('Intrapsicología PG · Psic. Patricia María Padilla Garibay · Cédula 13673702', ML, 290);
+    doc.text(String(pg), W-ML, 290, {align:'right'});
+  }
+
+  // ── PORTADA
+  doc.setFillColor(...C.dark); doc.rect(0,0,W,65,'F');
+  doc.setFillColor(...C.purple); doc.rect(0,62,W,4,'F');
+  doc.setTextColor(...C.white);
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.text('INTRAPSICOLOGÍA PG', ML, 16);
+  doc.setFontSize(22); doc.setFont('helvetica','bold'); doc.text('Guía de Autoconocimiento', ML, 30);
+  doc.setFontSize(13); doc.setFont('helvetica','normal'); doc.text('para Pareja — 74 temas', ML, 42);
+  doc.setFontSize(11); doc.setTextColor(...C.purple); doc.text(userName, ML, 54);
+  const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  doc.setFontSize(9); doc.setTextColor(170,170,200); doc.text(fecha, W-ML, 54, {align:'right'});
+
+  y = 76;
+
+  // ── RESUMEN ESTADÍSTICO
+  const stats = { basico:0, deseable:0, intolerable:0, siambos:0, lopido:0, lodoy:0, ninguno:0 };
+  TEMAS.forEach(t => {
+    const a = getA(t.id);
+    if (a.clasificacion) stats[a.clasificacion]++;
+    if (a.pidoDoy) stats[a.pidoDoy]++;
+  });
+
+  doc.setFillColor(...C.basicBg); doc.roundedRect(ML, y, CW, 22, 3,3,'F');
+  const sumItems = [
+    { label:'Básicos', val: stats.basico, c: C.basic },
+    { label:'Deseables', val: stats.deseable, c: C.deseable },
+    { label:'Intolerables', val: stats.intolerable, c: C.intolerable },
+  ];
+  const colW3 = CW/3;
+  sumItems.forEach((s, i) => {
+    const xi = ML + i*colW3;
+    doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.setTextColor(...s.c);
+    doc.text(String(s.val), xi+colW3/2, y+13, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...C.muted);
+    doc.text(s.label, xi+colW3/2, y+19, {align:'center'});
+  });
+  y += 30;
+
+  // ── INTOLERABLES PRIMERO (destacados)
+  const intolerables = TEMAS.filter(t => getA(t.id).clasificacion === 'intolerable');
+  if (intolerables.length > 0) {
+    checkPage(20);
+    doc.setFillColor(...C.intolerable); doc.roundedRect(ML,y,CW,10,3,3,'F');
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.white);
+    doc.text('⚠  INTOLERABLES — Requieren atención prioritaria', ML+6, y+7);
+    y += 14;
+
+    intolerables.forEach(t => {
+      const a = getA(t.id);
+      checkPage(28);
+      doc.setFillColor(...C.intBg); doc.roundedRect(ML,y,CW,8,2,2,'F');
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.intolerable);
+      doc.text(t.titulo, ML+5, y+5.5);
+      // pd badge
+      const pdLabel = { siambos:'Lo pido y lo doy', lopido:'Solo lo pido', lodoy:'Solo lo doy', ninguno:'Ninguno' };
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...C.muted);
+      doc.text(pdLabel[a.pidoDoy]||'', W-ML-2, y+5.5, {align:'right'});
+      y += 12;
+      if (a.miVersion) {
+        const lines = doc.splitTextToSize(a.miVersion, CW-8);
+        checkPage(lines.length*4.5+6);
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(...C.dark);
+        doc.text(lines, ML+4, y); y += lines.length*4.5+4;
+      }
+      doc.setDrawColor(...C.intolerable); doc.setLineDashPattern([2,2],0);
+      doc.line(ML,y,ML+CW,y); doc.setLineDashPattern([],0); y += 6;
+    });
+    y += 6;
+  }
+
+  // ── BÁSICOS
+  const basicos = TEMAS.filter(t => getA(t.id).clasificacion === 'basico');
+  if (basicos.length > 0) {
+    checkPage(16);
+    doc.setFillColor(...C.basic); doc.roundedRect(ML,y,CW,10,3,3,'F');
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.white);
+    doc.text('🟢  BÁSICOS — Indispensables para mí', ML+6, y+7);
+    y += 14;
+
+    basicos.forEach(t => {
+      const a = getA(t.id);
+      checkPage(22);
+      doc.setFillColor(...C.basicBg); doc.roundedRect(ML,y,CW,8,2,2,'F');
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.basic);
+      doc.text(t.titulo, ML+5, y+5.5);
+      const pdLabel = { siambos:'Lo pido y lo doy', lopido:'Solo lo pido', lodoy:'Solo lo doy', ninguno:'Ninguno' };
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...C.muted);
+      doc.text(pdLabel[a.pidoDoy]||'', W-ML-2, y+5.5, {align:'right'});
+      y += 12;
+      if (a.miVersion) {
+        const lines = doc.splitTextToSize(a.miVersion, CW-8);
+        checkPage(lines.length*4.5+6);
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(...C.dark);
+        doc.text(lines, ML+4, y); y += lines.length*4.5+4;
+      }
+      doc.setDrawColor(200,240,234); doc.line(ML,y,ML+CW,y); y += 6;
+    });
+    y += 6;
+  }
+
+  // ── DESEABLES
+  const deseables = TEMAS.filter(t => getA(t.id).clasificacion === 'deseable');
+  if (deseables.length > 0) {
+    checkPage(16);
+    doc.setFillColor(...C.deseable); doc.roundedRect(ML,y,CW,10,3,3,'F');
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.white);
+    doc.text('🟣  DESEABLES — Los quiero pero puedo negociar', ML+6, y+7);
+    y += 14;
+
+    deseables.forEach(t => {
+      const a = getA(t.id);
+      checkPage(22);
+      doc.setFillColor(...C.deseBg); doc.roundedRect(ML,y,CW,8,2,2,'F');
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...C.deseable);
+      doc.text(t.titulo, ML+5, y+5.5);
+      const pdLabel = { siambos:'Lo pido y lo doy', lopido:'Solo lo pido', lodoy:'Solo lo doy', ninguno:'Ninguno' };
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...C.muted);
+      doc.text(pdLabel[a.pidoDoy]||'', W-ML-2, y+5.5, {align:'right'});
+      y += 12;
+      if (a.miVersion) {
+        const lines = doc.splitTextToSize(a.miVersion, CW-8);
+        checkPage(lines.length*4.5+6);
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(...C.dark);
+        doc.text(lines, ML+4, y); y += lines.length*4.5+4;
+      }
+      doc.setDrawColor(220,214,248); doc.line(ML,y,ML+CW,y); y += 6;
+    });
+  }
+
+  // pies
+  const total = doc.internal.getNumberOfPages();
+  for (let i=1;i<=total;i++) { doc.setPage(i); footer(); }
+
+  const safe = userName.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'').trim().replace(/\s+/g,'_');
+  doc.save(`guia_pareja_${safe}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+</script>
+</body>
+</html>
